@@ -16,7 +16,6 @@ import com.android.volley.toolbox.Volley;
 
 import android.app.Activity;
 import android.content.Context;
-import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -27,6 +26,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -36,9 +36,12 @@ public class MainActivity extends Activity implements OnClickListener {
 	private RequestQueue queue;
 	private TextView txtDisplay;
 	private Button update,show;
+	private EditText es,ed;
+	private String s,d;
 	private String url = "http://myexperiments.comuv.com/busroute.json";
 	private final String tag = "JSONandDB";
-    @Override
+   
+	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -51,6 +54,8 @@ public class MainActivity extends Activity implements OnClickListener {
 		}
 		findViewById(R.id.progress).setVisibility(View.GONE);
 		txtDisplay = (TextView)findViewById(R.id.status);
+		es = (EditText)findViewById(R.id.src);
+		ed = (EditText)findViewById(R.id.dest);
 		update = (Button)findViewById(R.id.update);
 		update.setOnClickListener(new OnClickListener() {
 			
@@ -66,7 +71,9 @@ public class MainActivity extends Activity implements OnClickListener {
 			@Override
 			public void onClick(View arg0) {
 				// TODO Auto-generated method stub
-				show();
+				s = es.getText().toString();
+				d = ed.getText().toString();
+				show(s,d);
 			}
 		});
 		
@@ -124,6 +131,7 @@ public class MainActivity extends Activity implements OnClickListener {
 		queue.add(jsObjRequest);
 	}
 	
+	/*
 	public void show(){
 		MyDatabase mdb = new MyDatabase(getApplicationContext());
 		SQLiteDatabase db  = mdb.getReadableDatabase();
@@ -139,6 +147,38 @@ public class MainActivity extends Activity implements OnClickListener {
 			txtDisplay.setText(res);
 		}
 		db.close();
+	}*/
+	
+	public void show(String src,String dest)
+	{
+		MyDatabase mdb = new MyDatabase(getApplicationContext());
+		Log.d(tag, "Database Received");
+		DataOps.setDB(mdb);
+		ArrayList<String> busses = DataOps.getBusList();
+		busses.remove(0);
+		ArrayList<String> route = DataOps.route(src, dest, busses);
+		
+		//parse route
+		if(route.get(0).equals("DIRECT"))
+			txtDisplay.setText(route.get(1));
+		else if(route.get(0).equals("BREAK"))
+		{
+			route.remove(0);
+			String res = "";
+			for(String val:route)
+			{
+				String[] tmp = val.split("\\,");
+				Log.d("Value", val);
+				for(String t:tmp)
+					Log.d("Splitted", t);
+				res = res + "Take "+tmp[1]+" to "+tmp[0]+"then take "+tmp[2]+" to destination";
+				res = res + " \n";
+			}
+			txtDisplay.setText(res);
+		}
+		else
+			txtDisplay.setText("Error Occured");
+		
 	}
 	
 	
